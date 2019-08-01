@@ -28,7 +28,7 @@
 #else
  #include "WProgram.h"
 #endif
-#include <Adafruit_Sensor.h>
+//#include <Adafruit_Sensor.h>
 
 #ifdef __AVR_ATtiny85__
   #include "TinyWireM.h"
@@ -56,16 +56,17 @@
 #define TMP006_MANID 0xFE
 #define TMP006_DEVID 0xFF
 
-#define TMP006_VOBJ  0x0
+#define TMP006_VOBJ  0x00
 #define TMP006_TAMB 0x01
 
 class Adafruit_TMP006  {
  public:
   Adafruit_TMP006(uint8_t addr = TMP006_I2CADDR);
-  boolean begin(uint8_t samplerate = TMP006_CFG_16SAMPLE);  // by default go highres
+  bool begin(uint16_t samplerate = TMP006_CFG_16SAMPLE);  // by default go highres
 
-  void sleep();  // Put chip into low power mode (disables temperature measurements).
-  void wake();   // Wake from low power mode.
+  bool sleep();  // Put chip into low power mode (disables temperature measurements).
+  bool wake();   // Wake from low power mode.
+  bool drdy();   // check data ready bit
 
   int16_t readRawDieTemperature(void);
   int16_t readRawVoltage(void);
@@ -75,6 +76,6 @@ class Adafruit_TMP006  {
  private:
   uint8_t _addr;
   uint16_t read16(uint8_t addr);
-  void write16(uint8_t addr, uint16_t data);
+  bool write16(uint8_t addr, uint16_t data);
 };
 

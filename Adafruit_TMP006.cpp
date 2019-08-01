@@ -24,8 +24,7 @@ Adafruit_TMP006::Adafruit_TMP006(uint8_t i2caddr) {
 }
 
 
-boolean Adafruit_TMP006::begin(uint8_t samplerate) {
-  Wire.begin();
+bool Adafruit_TMP006::begin(uint16_t samplerate) {
 
   write16(TMP006_CONFIG, TMP006_CFG_MODEON | TMP006_CFG_DRDYEN | samplerate);
 
@@ -41,18 +40,28 @@ boolean Adafruit_TMP006::begin(uint8_t samplerate) {
   return true;
 }
 
-void Adafruit_TMP006::sleep() {
+bool Adafruit_TMP006::sleep() {
   // Read the control register and update it so bits 12-14 are zero to enter sleep mode.
   uint16_t control = read16(TMP006_CONFIG);
   control &= ~(TMP006_CFG_MODEON);
-  write16(TMP006_CONFIG, control);
+  return write16(TMP006_CONFIG, control);
 }
 
-void Adafruit_TMP006::wake() {
+bool Adafruit_TMP006::wake() {
   // Read the control register and update it so bits 12-14 are one to enter full operation.
   uint16_t control = read16(TMP006_CONFIG);
   control |= TMP006_CFG_MODEON;
-  write16(TMP006_CONFIG, control);
+  return write16(TMP006_CONFIG, control);
+}
+
+bool Adafruit_TMP006::drdy() {
+  // Read the control register and read it so bit 7 can be returned
+  uint16_t control = read16(TMP006_CONFIG);
+  control &= TMP006_CFG_DRDY; 
+  if (control>>7 == 1) {
+	  return true;
+  }
+  return false;
 }
 
 //////////////////////////////////////////////////////
@@ -155,7 +164,7 @@ uint16_t Adafruit_TMP006::read16(uint8_t a) {
 #endif
   Wire.endTransmission(); // end transmission
   
-  Wire.beginTransmission(_addr); // start transmission to device 
+  //Wire.beginTransmission(_addr); // start transmission to device 
   Wire.requestFrom(_addr, (uint8_t)2);// send data n-bytes read
 #if (ARDUINO >= 100)
   ret = Wire.read(); // receive DATA
@@ -166,12 +175,12 @@ uint16_t Adafruit_TMP006::read16(uint8_t a) {
   ret <<= 8;
   ret |= Wire.receive(); // receive DATA
 #endif
-  Wire.endTransmission(); // end transmission
+  //Wire.endTransmission(); // end transmission
 
   return ret;
 }
 
-void Adafruit_TMP006::write16(uint8_t a, uint16_t d) {
+bool Adafruit_TMP006::write16(uint8_t a, uint16_t d) {
   Wire.beginTransmission(_addr); // start transmission to device 
 #if (ARDUINO >= 100)
   Wire.write(a); // sends register address to read from
@@ -182,6 +191,10 @@ void Adafruit_TMP006::write16(uint8_t a, uint16_t d) {
   Wire.send(d>>8);  // write data
   Wire.send(d);  // write data
 #endif
-  Wire.endTransmission(); // end transmission
+  byte retVal = Wire.endTransmission(); // end transmission
+  if (retVal == 0) {
+	  return true;
+  }
+  return false;
 }
 
